@@ -26,6 +26,7 @@
 #include <sys/utsname.h>
 #include <time.h>
 #include <unistd.h>
+#include "redis_resp.h"
 
 // ---- cleanup helpers (GCC/Clang __attribute__((cleanup))) -----------------
 #ifndef __has_attribute
@@ -182,22 +183,47 @@ static void send_info(Conn *c) {
 }
 
 static void handle_command(Conn *c, const char *line) {
-    size_t n = strlen(line);
-    if (n && line[n-1] == '\r') n--;
-    if (n == 0) return;
 
-    if (n == 4 && (strncmp(line, "PING", 4) == 0 || strncmp(line, "ping", 4) == 0)) { send_pong(c); return; }
-    if (n == 4 && strncmp(line, "INFO", 4) == 0) { send_info(c); return; }
-    if (n == 4 && strncmp(line, "QUIT", 4) == 0) {
-        LOGI("QUIT from %s", c->peer[0] ? c->peer : "?");
-        xsend(c->fd, "BYE\r\n", 6);
-        c->fd = -1; // mark for close by caller
+    //size_t n = strlen(line);
+    //if (n && line[n-1] == '\r') n--;
+    //if (n == 0) return;
+
+    //if (n == 4 && (strncmp(line, "PING", 4) == 0 || strncmp(line, "ping", 4) == 0)) { send_pong(c); return; }
+    //if (n == 4 && strncmp(line, "INFO", 4) == 0) { send_info(c); return; }
+    //if (n == 4 && strncmp(line, "QUIT", 4) == 0) {
+    //    LOGI("QUIT from %s", c->peer[0] ? c->peer : "?");
+    //    xsend(c->fd, "BYE\r\n", 6);
+    //    c->fd = -1; // mark for close by caller
+    //    return;
+    //}
+    printf("command: %s\n", line);
+
+    //LOGW("unknown command from %s: '%.*s'", c->peer[0] ? c->peer : "?", (int)n, line);
+    //ignore unknown commands for now
+    //xprintf(c->fd, "ERR unknown_command\r\n");
+
+    ParsedCommand pc;
+    if (!resp3_parse_command(line, &pc)) {
+        fprintf(stderr, "Parse error\n");
         return;
     }
 
-    LOGW("unknown command from %s: '%.*s'", c->peer[0] ? c->peer : "?", (int)n, line);
-    //ignore unknown commands for now
-    //xprintf(c->fd, "ERR unknown_command\r\n");
+    printf("Command enum = %d\n", pc.cmd);
+
+    // If the top-level is an array of strings, get argv
+    const char **argv;
+    size_t argc;
+    if (resp3_as_argv(pc.root, &argv, &argc)) {
+        printf("argc=%zu\n", argc);
+        for (size_t i = 0; i < argc; i++) {
+            printf("argv[%zu] = %s\n", i, argv[i]);
+        }
+        free((void*)argv); // free the argv array (not the strings)
+    }
+
+    // Free the parsed structure
+    resp3_free(pc.root);
+
 }
 
 static void process_readable(Conn *c) {
