@@ -125,17 +125,21 @@ static int connect_upstream(struct conn *c) {
 static constexpr size_t HIGH_WATER = 8*1024*1024;
 
 static void maybe_backpressure(struct conn *c) {
-    if (dbuf_len(&c->u_out) > HIGH_WATER) {
-        fd_enable_events(&c->client_ctx, EPOLLET);
-    } else {
-        fd_enable_events(&c->client_ctx, EPOLLIN|EPOLLET);
-    }
-    if (dbuf_len(&c->c_out) > HIGH_WATER) {
-        fd_enable_events(&c->up_ctx, EPOLLET);
-    } else {
-        fd_enable_events(&c->up_ctx, EPOLLIN|EPOLLET | (c->up_connected?0:EPOLLOUT));
-    }
+    // Client side: throttle reads based on upstream-out buffer size, but
+    // preserve EPOLLOUT if we have data to write to the client.
+    uint32_t client_mask = EPOLLET;
+    if (dbuf_len(&c->u_out) <= HIGH_WATER) client_mask |= EPOLLIN;
+    if (dbuf_len(&c->c_out) > 0)           client_mask |= EPOLLOUT;
+    fd_enable_events(&c->client_ctx, client_mask);
+
+    // Upstream side: throttle reads based on client-out buffer size, but
+    // preserve EPOLLOUT if we have data to write upstream or we’re still connecting.
+    uint32_t up_mask = EPOLLET;
+    if (dbuf_len(&c->c_out) <= HIGH_WATER) up_mask |= EPOLLIN;
+    if (!c->up_connected || dbuf_len(&c->u_out) > 0) up_mask |= EPOLLOUT;
+    fd_enable_events(&c->up_ctx, up_mask);
 }
+
 
 static void process_client_buffer(struct conn *c) {
     for (;;) {
@@ -173,6 +177,7 @@ static void process_client_buffer(struct conn *c) {
             dbuf_consume(&c->c_in, frame);
             c->inflight++;
             schedule_writable(&c->up_ctx, true);
+            LOGD("Forwarded %s", cmd.cmd);
         }
         maybe_backpressure(c);
     }
@@ -210,15 +215,19 @@ static void handle_upstream_read(struct conn *c) {
             LOGE("upstream read error: %s", strerror(errno)); conn_free(c);
             return; }
         if (rr == 1) {
+            LOGD("upstream fd=%d EOF", c->up_fd);
             break;
         }
     }
     if (dbuf_len(&c->u_in)) {
+        LOGD("upstream fd=%d -> client fd=%d", c->up_fd, c->client_fd);
         if (dbuf_append(&c->c_out, c->u_in.data + c->u_in.rpos, dbuf_len(&c->u_in)) < 0) {
             LOGE("OOM appending response");
+        } else {
+            LOGD("Added %zu bytes: %.*s", dbuf_len(&c->u_in), (int)dbuf_len(&c->u_in), c->u_in.data);
         }
         dbuf_consume(&c->u_in, dbuf_len(&c->u_in));
-        schedule_writable(&c->client_ctx, true);
+        schedule_writable(&c->client_ctx, false);
     }
     maybe_backpressure(c);
 }
@@ -226,17 +235,21 @@ static void handle_upstream_read(struct conn *c) {
 static void handle_client_write(struct conn *c) {
     const ssize_t n = dbuf_write_to_fd(&c->c_out, c->client_fd);
     if (n < 0) { LOGE("client write error: %s", strerror(errno)); conn_free(c); return; }
-    if (dbuf_len(&c->c_out)==0) schedule_writable(&c->client_ctx, false);
+    if (dbuf_len(&c->c_out)==0)
+        schedule_writable(&c->client_ctx, false);
 }
 
 static void handle_upstream_write(struct conn *c) {
     if (!c->up_connected) {
         int err=0; socklen_t el=sizeof(err);
         if (getsockopt(c->up_fd, SOL_SOCKET, SO_ERROR, &err, &el)==0) {
-            if (err==0) { c->up_connected = true; LOGD("upstream connected fd=%d", c->up_fd); }
+            if (err==0) {
+                c->up_connected = true; LOGD("upstream connected fd=%d", c->up_fd);
+            }
             else { LOGE("upstream connect failed: %s", strerror(err)); conn_free(c); return; }
         }
     }
+    LOGD("writing %zu bytes to upstream fd=%d", dbuf_len(&c->u_out), c->up_fd);
     const ssize_t n = dbuf_write_to_fd(&c->u_out, c->up_fd);
     if (n < 0) { LOGE("upstream write error: %s", strerror(errno)); conn_free(c); return; }
     if (dbuf_len(&c->u_out)==0) fd_enable_events(&c->up_ctx, EPOLLIN|EPOLLET);
