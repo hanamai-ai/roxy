@@ -181,9 +181,19 @@ static void process_client_buffer(struct conn *c) {
 static void handle_client_read(struct conn *c) {
     for (;;) {
         const ssize_t rr = dbuf_read_from_fd(&c->c_in, c->client_fd);
-        if (rr == 0) { LOGD("client fd=%d EOF", c->client_fd); conn_free(c); return; }
-        else if (rr < 0) { LOGE("client read error: %s", strerror(errno)); conn_free(c); return; }
-        else if (rr == 1) { break; }
+        if (rr == 0) {
+            LOGD("client fd=%d EOF", c->client_fd);
+            conn_free(c);
+            return;
+        }
+        if (rr < 0) {
+            LOGE("client read error: %s", strerror(errno));
+            conn_free(c);
+            return;
+        }
+        if (rr == 1) {
+            break;
+        }
     }
     process_client_buffer(c);
 }
@@ -191,9 +201,17 @@ static void handle_client_read(struct conn *c) {
 static void handle_upstream_read(struct conn *c) {
     for (;;) {
         const ssize_t rr = dbuf_read_from_fd(&c->u_in, c->up_fd);
-        if (rr == 0) { LOGW("Upstream Redis %s:%u disconnected (fd=%d EOF)", g_cfg->redis_host, g_cfg->redis_port, c->up_fd); conn_free(c); return; }
-        else if (rr < 0) { LOGE("upstream read error: %s", strerror(errno)); conn_free(c); return; }
-        else if (rr == 1) { break; }
+        if (rr == 0) {
+            LOGW("Upstream Redis %s:%u disconnected (fd=%d EOF)", g_cfg->redis_host, g_cfg->redis_port, c->up_fd);
+            conn_free(c);
+            return;
+        }
+        if (rr < 0) {
+            LOGE("upstream read error: %s", strerror(errno)); conn_free(c);
+            return; }
+        if (rr == 1) {
+            break;
+        }
     }
     if (dbuf_len(&c->u_in)) {
         if (dbuf_append(&c->c_out, c->u_in.data + c->u_in.rpos, dbuf_len(&c->u_in)) < 0) {
