@@ -1,47 +1,41 @@
-# Makefile
+# roxy — Redis Layer 7 proxy
+# Build: make
+# Clean: make clean
 
-# Configuration (override from CLI if needed, e.g. `make CONFIG=debug`)
-CONFIG ?= release
+CC      ?= cc
+CFLAGS  ?= -std=c2x -O2 -Wall -Wextra -D_GNU_SOURCE
+LDFLAGS ?= 
+INCLUDE := -Iinclude
 
-# Compiler and flags
-CC      := gcc
-CFLAGS.common := -pipe -Wall -Wextra -Wshadow -Wformat=2 -Wcast-qual -Wpointer-arith
-CFLAGS.release := -O2 -DNDEBUG
-CFLAGS.debug   := -O0 -g3 -ggdb -DDEBUG
-# Use GNU C2x for modern C and Linux extensions
-CSTD := -std=gnu2x
+SRC := \
+	src/main.c \
+	src/server.c \
+	src/dbuf.c \
+	src/resp.c  \
+	src/hooks.c \
+	src/log.c
 
-# Linker flags (add libs if needed, e.g., LDFLAGS += -pthread)
-LDFLAGS :=
+OBJ := $(SRC:.c=.o)
+BIN := roxy
 
-# Project layout
-TARGET := roxy
-SRC    := roxy.c
-OBJ    := $(SRC:.c=.o)
+TEST_SRC := src/dbuf_test.c
+TEST_BIN := dbuf_test
 
-# Compose flags based on configuration
-CFLAGS := $(CSTD) $(CFLAGS.common) $(CFLAGS.$(CONFIG))
+.PHONY: all clean test
 
-.PHONY: all release debug clean run rebuild
+all: $(BIN)
 
-all: $(TARGET)
-
-release:
-	@$(MAKE) --no-print-directory CONFIG=release
-
-debug:
-	@$(MAKE) --no-print-directory CONFIG=debug
-
-$(TARGET): $(OBJ)
+$(BIN): $(OBJ)
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+src/%.o: src/%.c include/roxy.h include/log.h include/dbuf.h include/resp.h include/hooks.h
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
-run: $(TARGET)
-	./$(TARGET)
+$(TEST_BIN): $(TEST_SRC) include/dbuf.h src/dbuf.o
+	$(CC) $(CFLAGS) $(INCLUDE) -o $@ $(TEST_SRC) src/dbuf.o $(LDFLAGS)
+
+test: $(TEST_BIN)
+	./$(TEST_BIN)
 
 clean:
-	$(RM) $(OBJ) $(TARGET)
-
-rebuild: clean all
+	rm -f $(OBJ) $(BIN) $(TEST_BIN)

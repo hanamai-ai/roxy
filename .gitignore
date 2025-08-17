@@ -55,4 +55,5 @@ build
 vcpkg_installed
 .idea
 roxy
-
+dbuf_test
+*.rdb
