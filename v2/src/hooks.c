@@ -37,8 +37,9 @@ enum roxy_hook_result roxy_hook_apply(const struct roxy_cmd *cmd, roxy_rewrite_t
 
 static enum roxy_hook_result hook_log_all(const struct roxy_cmd *cmd, roxy_rewrite_t *out, void *user) {
     (void)out; (void)user;
-    char preview[256]; size_t off=0;
-    for (size_t i=0;i<cmd->argc && i<6;i++) {
+    char preview[256];
+    size_t off=0;
+    for (size_t i=0; i<cmd->argc && i<6; i++) {
         size_t n = cmd->argv[i].len < 40 ? cmd->argv[i].len : 40;
         if (off + n + 1 >= sizeof(preview)) break;
         off += (size_t)snprintf(preview+off, sizeof(preview)-off, "%s%.*s", (i?" ":""), (int)n, cmd->argv[i].ptr);
@@ -49,10 +50,12 @@ static enum roxy_hook_result hook_log_all(const struct roxy_cmd *cmd, roxy_rewri
 
 static enum roxy_hook_result hook_log_some(const struct roxy_cmd *cmd, roxy_rewrite_t *out, void *user) {
     (void)out; (void)user;
-    char preview[256]; size_t off=0;
-    for (size_t i=0;i<cmd->argc && i<4;i++) {
-        size_t n = cmd->argv[i].len < 40 ? cmd->argv[i].len : 40;
-        if (off + n + 1 >= sizeof(preview)) break;
+    char preview[256];
+    size_t off=0;
+    for (size_t i=0; i<cmd->argc && i<4; i++) {
+        const size_t n = cmd->argv[i].len < 40 ? cmd->argv[i].len : 40;
+        if (off + n + 1 >= sizeof(preview))
+            break;
         off += (size_t)snprintf(preview+off, sizeof(preview)-off, "%s%.*s", (i?" ":""), (int)n, cmd->argv[i].ptr);
     }
     LOGI("CMD %s argc=%zu%s%.*s", cmd->cmd, cmd->argc, off?" preview=":"", (int)off, preview);

@@ -122,7 +122,7 @@ static int connect_upstream(struct conn *c) {
     return 0;
 }
 
-static const size_t HIGH_WATER = 8*1024*1024;
+static constexpr size_t HIGH_WATER = 8*1024*1024;
 
 static void maybe_backpressure(struct conn *c) {
     if (dbuf_len(&c->u_out) > HIGH_WATER) {
