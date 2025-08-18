@@ -1,6 +1,5 @@
 #pragma once
 #include "roxy.h"
-#include <stdbool.h>
 
 enum roxy_hook_result { ROXY_PASS=0, ROXY_BLOCK=1, ROXY_REWRITE=2 };
 

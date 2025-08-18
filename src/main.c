@@ -3,7 +3,6 @@
  * BSD-3-Clause
  */
 #include "roxy.h"
-#include "server.h"
 #include "hooks.h"
 #include "log.h"
 

@@ -2,7 +2,6 @@
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
-#include <stdbool.h>
 
 static void str_to_upper(char *s) {
     for (; *s; s++) {
