@@ -60,21 +60,21 @@
 #include <sys/types.h>
 
 struct dbuf {
-    char  *data;  // Pointer to heap-allocated storage (may be NULL after init/free).
-    size_t cap;   // Total allocated capacity of 'data' in bytes.
-    size_t rpos;  // Read position (start offset of readable data).
-    size_t wpos;  // Write position (one past the last written byte).
+	char *data;		// Pointer to heap-allocated storage (may be NULL after init/free).
+	size_t cap;		// Total allocated capacity of 'data' in bytes.
+	size_t rpos;		// Read position (start offset of readable data).
+	size_t wpos;		// Write position (one past the last written byte).
 };
 
 // Initialize an empty buffer.
 // - Sets all fields to a valid empty state (no allocation required).
 // - Must be called before any other operation on the buffer.
-void   dbuf_init(struct dbuf *b);
+void dbuf_init(struct dbuf *b);
 
 // Release any memory held by the buffer and reset it to the empty state.
 // - Safe to call on an already-empty buffer.
 // - After this call, the buffer can be reused by calling dbuf_init() again.
-void   dbuf_free(struct dbuf *b);
+void dbuf_free(struct dbuf *b);
 
 // Return the number of bytes currently readable in the buffer.
 // - Equivalent to (b->wpos - b->rpos).
@@ -83,18 +83,18 @@ size_t dbuf_len(const struct dbuf *b);
 // Ensure the buffer has at least 'extra' bytes of free space available after wpos.
 // - May reallocate the underlying storage and/or compact existing data.
 // - On success returns 0; on failure returns -1.
-int    dbuf_reserve(struct dbuf *b, size_t extra);
+int dbuf_reserve(struct dbuf *b, size_t extra);
 
 // Append 'n' bytes from 'data' to the end of the buffer.
 // - Grows the buffer if needed (as if by dbuf_reserve()).
 // - On success returns 0; on allocation failure returns -1.
-int    dbuf_append(struct dbuf *b, const void *data, size_t n);
+int dbuf_append(struct dbuf *b, const void *data, size_t n);
 
 // Consume (discard) the first 'n' readable bytes from the buffer.
 // - Advances rpos by n, clamping at wpos.
 // - Implementations may reset rpos/wpos to 0 when the buffer becomes empty
 //   to avoid unbounded growth of indices.
-void   dbuf_consume(struct dbuf *b, size_t n);
+void dbuf_consume(struct dbuf *b, size_t n);
 
 // Read from a file descriptor into the buffer's free space, appending bytes.
 // - Behavior mirrors read(2) semantics on the underlying fd.

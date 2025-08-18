@@ -3,7 +3,7 @@
 #include <time.h>
 #include <stdio.h>
 
-enum log_level { LOG_DEBUG=0, LOG_INFO=1, LOG_WARN=2, LOG_ERR=3 };
+enum log_level { LOG_DEBUG = 0, LOG_INFO = 1, LOG_WARN = 2, LOG_ERR = 3 };
 extern int g_log_level;
 
 void log_at(enum log_level lvl, const char *fmt, ...);
