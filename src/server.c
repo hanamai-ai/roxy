@@ -45,7 +45,7 @@ struct conn {
 
 static int g_ep = -1;
 static volatile sig_atomic_t g_running = 1;
-static const struct roxy_config *g_cfg = nullptr;
+static const struct roxy_config *g_cfg = NULL;
 
 static void on_signal(const int sig) { (void)sig; g_running = 0; }
 
@@ -56,7 +56,7 @@ static int set_nonblock(int fd) {
 }
 
 static int tcp_tune(const int fd) {
-    constexpr int one = 1;
+    const int one = 1;
     setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
     setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
 #ifdef TCP_KEEPIDLE
@@ -122,7 +122,7 @@ static int connect_upstream(struct conn *c) {
     return 0;
 }
 
-static constexpr size_t HIGH_WATER = 8*1024*1024;
+static const size_t HIGH_WATER = 8 * 1024 * 1024;
 
 static void maybe_backpressure(struct conn *c) {
     // Client side: throttle reads based on upstream-out buffer size, but
@@ -302,7 +302,7 @@ int roxy_server_run(const struct roxy_config *cfg) {
         perror("socket");
         return 1;
     }
-    constexpr int one=1;
+    const int one = 1;
     setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
     set_nonblock(lfd);
 
@@ -323,10 +323,10 @@ int roxy_server_run(const struct roxy_config *cfg) {
     g_ep = epoll_create1(EPOLL_CLOEXEC);
     if (g_ep < 0) { perror("epoll_create1"); close(lfd); return 1; }
 
-    struct fdctx lctx = { .type=FD_LISTENER, .fd=lfd, .c=nullptr };
+    struct fdctx lctx = { .type=FD_LISTENER, .fd=lfd, .c=NULL };
     ep_ctl(g_ep, EPOLL_CTL_ADD, lfd, EPOLLIN|EPOLLET, &lctx);
 
-    constexpr int MAXEV = 64;
+    const int MAXEV = 64;
     struct epoll_event evs[MAXEV];
 
     LOGI("Roxy listening on %s:%u → Redis %s:%u", cfg->roxy_host, cfg->roxy_port, cfg->redis_host, cfg->redis_port);

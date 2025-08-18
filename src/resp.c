@@ -2,6 +2,7 @@
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 static void str_to_upper(char *s) {
     for (; *s; s++) {
@@ -63,7 +64,7 @@ int resp_parse_request(const char *buf, const size_t len, size_t *frame_len, str
         return 1;
     }
 
-    const char *cr = nullptr;
+    const char *cr = NULL;
     for (size_t i=0;i<len-1;i++) { if (buf[i]=='\r' && buf[i+1]=='\n') { cr = buf+i; break; } }
     if (!cr) return 0;
     out->argc = 0;
