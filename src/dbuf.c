@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 void dbuf_init(struct dbuf *b) {
-    b->data = NULL;
+    b->data = nullptr;
     b->cap = 0;
     b->rpos = 0;
     b->wpos = 0;
@@ -13,7 +13,7 @@ void dbuf_init(struct dbuf *b) {
 
 void dbuf_free(struct dbuf *b) {
     free(b->data);
-    b->data = NULL;
+    b->data = nullptr;
     b->cap = 0;
     b->rpos = 0;
     b->wpos = 0;

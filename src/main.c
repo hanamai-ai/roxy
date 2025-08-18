@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     };
 
     int c;
-    while ((c=getopt_long(argc, argv, "vh", opts, NULL)) != -1) {
+    while ((c=getopt_long(argc, argv, "vh", opts, nullptr)) != -1) {
         switch (c) {
             case 1000: cfg.roxy_host = optarg; break;
             case 1001: cfg.roxy_port = (unsigned short)atoi(optarg); break;

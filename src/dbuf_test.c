@@ -43,7 +43,7 @@ static void test_init_free(void) {
     dbuf_init(&b);
     ASSERT_EQ_SIZE(dbuf_len(&b), 0);
     ASSERT_TRUE(b.cap == 0);
-    ASSERT_TRUE(b.data == NULL);
+    ASSERT_TRUE(b.data == nullptr);
 
     const char* msg = "abc";
     ASSERT_EQ_INT(dbuf_append(&b, msg, strlen(msg)), 0);
@@ -52,7 +52,7 @@ static void test_init_free(void) {
     dbuf_free(&b);
     ASSERT_EQ_SIZE(dbuf_len(&b), 0);
     ASSERT_TRUE(b.cap == 0);
-    ASSERT_TRUE(b.data == NULL);
+    ASSERT_TRUE(b.data == nullptr);
 }
 
 static void test_append_and_consume(void) {
@@ -82,7 +82,7 @@ static void test_compaction_via_reserve_and_append(void) {
 
     const size_t first = 3000;
     char* buf = malloc(first);
-    ASSERT_TRUE(buf != NULL);
+    ASSERT_TRUE(buf != nullptr);
     for (size_t i = 0; i < first; ++i) buf[i] = (char)('A' + (i % 26));
     ASSERT_EQ_INT(dbuf_append(&b, buf, first), 0);
 
@@ -93,7 +93,7 @@ static void test_compaction_via_reserve_and_append(void) {
 
     const size_t extra = 1500;
     char* extra_buf = malloc(extra);
-    ASSERT_TRUE(extra_buf != NULL);
+    ASSERT_TRUE(extra_buf != nullptr);
     memset(extra_buf, 'z', extra);
 
     ASSERT_EQ_INT(dbuf_append(&b, extra_buf, extra), 0);
@@ -164,7 +164,7 @@ static void test_write_to_fd_nonblocking(void) {
 
     const size_t big = 1 << 20; // 1 MiB
     char* buf = malloc(big);
-    ASSERT_TRUE(buf != NULL);
+    ASSERT_TRUE(buf != nullptr);
     memset(buf, 'Y', big);
 
     ASSERT_EQ_INT(dbuf_append(&b, buf, big), 0);

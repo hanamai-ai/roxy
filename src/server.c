@@ -45,7 +45,7 @@ struct conn {
 
 static int g_ep = -1;
 static volatile sig_atomic_t g_running = 1;
-static const struct roxy_config *g_cfg = NULL;
+static const struct roxy_config *g_cfg = nullptr;
 
 static void on_signal(const int sig) { (void)sig; g_running = 0; }
 
@@ -83,8 +83,8 @@ static void fd_enable_events(struct fdctx *x, const uint32_t events) {
 
 static void conn_free(struct conn *c) {
     if (!c) return;
-    if (c->client_fd>=0) { epoll_ctl(g_ep, EPOLL_CTL_DEL, c->client_fd, NULL); close(c->client_fd); }
-    if (c->up_fd>=0)     { epoll_ctl(g_ep, EPOLL_CTL_DEL, c->up_fd, NULL);     close(c->up_fd); }
+    if (c->client_fd>=0) { epoll_ctl(g_ep, EPOLL_CTL_DEL, c->client_fd, nullptr); close(c->client_fd); }
+    if (c->up_fd>=0)     { epoll_ctl(g_ep, EPOLL_CTL_DEL, c->up_fd, nullptr);     close(c->up_fd); }
     dbuf_free(&c->c_in); dbuf_free(&c->c_out); dbuf_free(&c->u_in); dbuf_free(&c->u_out);
     free(c);
 }
@@ -323,7 +323,7 @@ int roxy_server_run(const struct roxy_config *cfg) {
     g_ep = epoll_create1(EPOLL_CLOEXEC);
     if (g_ep < 0) { perror("epoll_create1"); close(lfd); return 1; }
 
-    struct fdctx lctx = { .type=FD_LISTENER, .fd=lfd, .c=NULL };
+    struct fdctx lctx = { .type=FD_LISTENER, .fd=lfd, .c=nullptr };
     ep_ctl(g_ep, EPOLL_CTL_ADD, lfd, EPOLLIN|EPOLLET, &lctx);
 
     const int MAXEV = 64;

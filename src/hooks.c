@@ -86,9 +86,9 @@ static enum roxy_hook_result hook_rewrite_keys(const struct roxy_cmd *cmd, roxy_
 }
 
 void roxy_hooks_init_defaults(void) {
-    roxy_register_hook("*",       hook_log_all,  NULL);
-    roxy_register_hook("PING",     hook_log_some, NULL);
-    roxy_register_hook("FLUSHALL", hook_block_flush, NULL);
-    roxy_register_hook("FLUSHDB",  hook_block_flush, NULL);
-    roxy_register_hook("KEYS",     hook_rewrite_keys, NULL);
+    roxy_register_hook("*",       hook_log_all,  nullptr);
+    roxy_register_hook("PING",     hook_log_some, nullptr);
+    roxy_register_hook("FLUSHALL", hook_block_flush, nullptr);
+    roxy_register_hook("FLUSHDB",  hook_block_flush, nullptr);
+    roxy_register_hook("KEYS",     hook_rewrite_keys, nullptr);
 }

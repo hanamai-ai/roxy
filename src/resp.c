@@ -64,7 +64,7 @@ int resp_parse_request(const char *buf, const size_t len, size_t *frame_len, str
         return 1;
     }
 
-    const char *cr = NULL;
+    const char *cr = nullptr;
     for (size_t i=0;i<len-1;i++) { if (buf[i]=='\r' && buf[i+1]=='\n') { cr = buf+i; break; } }
     if (!cr) return 0;
     out->argc = 0;
