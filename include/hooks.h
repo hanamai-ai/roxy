@@ -1,6 +1,12 @@
 #pragma once
 #include "roxy.h"
 
+#if defined(__GNUC__) || defined(__clang__)
+#define UNUSED __attribute__((unused))
+#else
+#define ROXY_UNUSED
+#endif
+
 enum roxy_hook_result { ROXY_PASS = 0, ROXY_BLOCK = 1, ROXY_REWRITE = 2 };
 
 typedef struct {

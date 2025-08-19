@@ -50,10 +50,9 @@ enum roxy_hook_result roxy_hook_apply(const struct roxy_cmd *cmd,
 // ---- default hooks ----
 
 static enum roxy_hook_result hook_log_all(const struct roxy_cmd *cmd,
-					  roxy_rewrite_t *out, void *user)
+					  roxy_rewrite_t *out UNUSED, void *user UNUSED)
 {
-	(void)out;
-	(void)user;
+
 	char preview[256];
 	size_t off = 0;
 	for (size_t i = 0; i < cmd->argc && i < 6; i++) {
@@ -71,10 +70,9 @@ static enum roxy_hook_result hook_log_all(const struct roxy_cmd *cmd,
 }
 
 static enum roxy_hook_result hook_log_some(const struct roxy_cmd *cmd,
-					   roxy_rewrite_t *out, void *user)
+					   roxy_rewrite_t *out UNUSED, void *user UNUSED)
 {
-	(void)out;
-	(void)user;
+
 	char preview[256];
 	size_t off = 0;
 	for (size_t i = 0; i < cmd->argc && i < 4; i++) {
@@ -92,10 +90,8 @@ static enum roxy_hook_result hook_log_some(const struct roxy_cmd *cmd,
 }
 
 static enum roxy_hook_result hook_block_flush(const struct roxy_cmd *cmd,
-					      roxy_rewrite_t *out, void *user)
+					      roxy_rewrite_t *out UNUSED, void *user UNUSED)
 {
-	(void)out;
-	(void)user;
 	if (strcmp(cmd->cmd, "FLUSHALL") == 0
 	    || strcmp(cmd->cmd, "FLUSHDB") == 0)
 		return ROXY_BLOCK;
@@ -103,9 +99,9 @@ static enum roxy_hook_result hook_block_flush(const struct roxy_cmd *cmd,
 }
 
 static enum roxy_hook_result hook_rewrite_keys(const struct roxy_cmd *cmd,
-					       roxy_rewrite_t *out, void *user)
+					       roxy_rewrite_t *out, void *user UNUSED)
 {
-	(void)user;
+
 	if (strcmp(cmd->cmd, "KEYS") == 0 && cmd->argc == 2) {
 		out->argc = 6;
 		static const char CMD[] = "SCAN", ZERO[] = "0", MATCH[] =
