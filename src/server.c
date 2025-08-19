@@ -35,9 +35,6 @@
 /* Type of file descriptor registered in epoll */
 typedef enum { FD_LISTENER = 0, FD_CLIENT = 1, FD_UPSTREAM = 2 } fd_type_t;
 
-/* Forward declaration */
-struct conn;
-
 /* Small context stored in epoll's data.ptr for each FD */
 struct fdctx {
 	fd_type_t type;		/* what this fd is */
