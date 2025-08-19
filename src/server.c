@@ -91,9 +91,8 @@ static int set_nonblock(int fd)
 /* Best-effort TCP socket tuning for proxying latency-sensitive traffic */
 static int tcp_tune(const int fd)
 {
-	const int one = 1;
-	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
-	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
+	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &(int) { 1 }, sizeof(int));
+	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &(int) { 1 }, sizeof(int));
 #ifdef TCP_KEEPIDLE
 	const int idle = 30;
 	setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle));
