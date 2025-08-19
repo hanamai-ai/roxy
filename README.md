@@ -12,7 +12,7 @@ A lightweight Redis Layer 7 proxy.
 - Linux (tested on Ubuntu 24.04)
 - C toolchain:
   - make
-  - a C compiler (e.g., gcc or clang)
+  - a recent C compiler (e.g., gcc or clang with support for C23 features)
 
 ## Build
 
@@ -40,7 +40,7 @@ Open a terminal and run:
 
 Open another terminal and run:
 
-```./roxy -vvvv```
+```./roxy```
 
 Open another terminal and run:
 
