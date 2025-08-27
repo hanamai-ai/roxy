@@ -173,7 +173,7 @@ static int write_err_to_client(struct conn *c, const char *msg)
 /* Initiate a non-blocking connect() to the configured upstream Redis */
 static int connect_upstream(struct conn *c)
 {
-	const int fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
+	_cleanup_close_ int fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
 	if (fd < 0) {
 		LOGE("socket upstream: %s", strerror(errno));
 		return -1;
@@ -186,18 +186,19 @@ static int connect_upstream(struct conn *c)
 	if (inet_pton(AF_INET, g_cfg->redis_host, &sa.sin_addr) != 1) {
 		LOGE("Invalid upstream host %s (IPv4 only in this build)",
 		     g_cfg->redis_host);
-		close(fd);
 		return -1;
 	}
 	int r = connect(fd, (struct sockaddr *)&sa, sizeof(sa));
 	if (r < 0 && errno != EINPROGRESS) {
 		LOGE("connect upstream: %s", strerror(errno));
-		close(fd);
 		return -1;
 	}
 	c->up_fd = fd;
 	c->up_connected = (r == 0);
 	c->up_ctx = (struct fdctx) {.type = FD_UPSTREAM,.fd = c->up_fd,.c = c };
+	
+	/* Transfer ownership to connection - prevent cleanup from closing it */
+	fd = -1;
 	/* Register upstream with EPOLLIN | EPOLLOUT initially:
 	 * - EPOLLOUT drives completion of non-blocking connect.
 	 * - EPOLLIN allows reading as soon as connection is established.
@@ -520,7 +521,7 @@ int roxy_server_run(const struct roxy_config *cfg)
 	signal(SIGTERM, on_signal);
 
 	/* Create listener */
-	const int lfd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
+	_cleanup_close_ int lfd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
 	if (lfd < 0) {
 		perror("socket");
 		return 1;
@@ -535,17 +536,14 @@ int roxy_server_run(const struct roxy_config *cfg)
 
 	if (inet_pton(AF_INET, cfg->roxy_host, &sa.sin_addr) != 1) {
 		fprintf(stderr, "Invalid roxy host %s\n", cfg->roxy_host);
-		close(lfd);
 		return 1;
 	}
 	if (bind(lfd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
 		perror("bind");
-		close(lfd);
 		return 1;
 	}
 	if (listen(lfd, SOMAXCONN) < 0) {
 		perror("listen");
-		close(lfd);
 		return 1;
 	}
 
@@ -553,7 +551,6 @@ int roxy_server_run(const struct roxy_config *cfg)
 	g_ep = epoll_create1(EPOLL_CLOEXEC);
 	if (g_ep < 0) {
 		perror("epoll_create1");
-		close(lfd);
 		return 1;
 	}
 
@@ -579,6 +576,5 @@ int roxy_server_run(const struct roxy_config *cfg)
 			on_event(&evs[i]);
 	}
 
-	close(lfd);
 	return 0;
 }
