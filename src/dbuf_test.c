@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "roxy.h"
 #include "dbuf.h"
 
 #define ASSERT_TRUE(expr) do { \
@@ -85,7 +86,7 @@ static void test_compaction_via_reserve_and_append(void)
 	dbuf_init(&b);
 
 	const size_t first = 3000;
-	char *buf = malloc(first);
+	_cleanup_free_ char *buf = malloc(first);
 	ASSERT_TRUE(buf != nullptr);
 	for (size_t i = 0; i < first; ++i)
 		buf[i] = (char)('A' + (i % 26));
@@ -97,7 +98,7 @@ static void test_compaction_via_reserve_and_append(void)
 	size_t old_cap = b.cap;
 
 	const size_t extra = 1500;
-	char *extra_buf = malloc(extra);
+	_cleanup_free_ char *extra_buf = malloc(extra);
 	ASSERT_TRUE(extra_buf != nullptr);
 	memset(extra_buf, 'z', extra);
 
@@ -109,8 +110,6 @@ static void test_compaction_via_reserve_and_append(void)
 	ASSERT_TRUE(memcmp(b.data, buf + consumed, first - consumed) == 0);
 	ASSERT_TRUE(memcmp(b.data + (first - consumed), extra_buf, extra) == 0);
 
-	free(buf);
-	free(extra_buf);
 	dbuf_free(&b);
 }
 
@@ -118,7 +117,8 @@ static void test_read_from_fd_nonblocking(void)
 {
 	int fds[2];
 	ASSERT_TRUE(pipe(fds) == 0);
-	int rd = fds[0], wr = fds[1];
+	_cleanup_close_ int rd = fds[0];
+	int wr = fds[1];  // Don't use cleanup for wr since we close it manually
 
 	set_nonblocking(rd);
 
@@ -138,7 +138,6 @@ static void test_read_from_fd_nonblocking(void)
 	ASSERT_EQ_INT(r, 0);
 
 	dbuf_free(&b);
-	close(rd);
 }
 
 static void drain_pipe_some(int rd, size_t want)
@@ -164,7 +163,8 @@ static void test_write_to_fd_nonblocking(void)
 {
 	int fds[2];
 	ASSERT_TRUE(pipe(fds) == 0);
-	int rd = fds[0], wr = fds[1];
+	_cleanup_close_ int rd = fds[0];
+	_cleanup_close_ int wr = fds[1];
 
 	int flags = fcntl(wr, F_GETFL, 0);
 	ASSERT_TRUE(flags >= 0);
@@ -174,7 +174,7 @@ static void test_write_to_fd_nonblocking(void)
 	dbuf_init(&b);
 
 	const size_t big = 1 << 20;	// 1 MiB
-	char *buf = malloc(big);
+	_cleanup_free_ char *buf = malloc(big);
 	ASSERT_TRUE(buf != nullptr);
 	memset(buf, 'Y', big);
 
@@ -195,10 +195,7 @@ static void test_write_to_fd_nonblocking(void)
 	dbuf_consume(&b, dbuf_len(&b));
 	ASSERT_EQ_INT(dbuf_write_to_fd(&b, wr), 0);
 
-	free(buf);
 	dbuf_free(&b);
-	close(rd);
-	close(wr);
 }
 
 int main(void)
